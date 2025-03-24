@@ -7,6 +7,7 @@ train_test_ratio = 0.8  # 训练集和测试集的比例
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 8
 block_size = 32
+eval_iters = 100  # 评估时的迭代次数
 
 with open("data/tiny_Shakespeare.txt", 'r', encoding='utf-8') as f:
     text = f.read()
@@ -24,7 +25,7 @@ n = int(len(data) * train_test_ratio)
 train_data = data[:n]
 test_data = data[n:]
 
-# 辅助函数
+# 数据加载
 def get_batch(split):
     """
     从训练集或测试集中随机采样，生成`batch_size`个序列长度为`block_size`的样本
@@ -38,5 +39,26 @@ def get_batch(split):
     x, y = x.to(device), y.to(device)
     return x, y
 
+# loss计算
+@torch.no_grad()  # 使用`torch.no_grad`装饰器，避免梯度计算，节省内存和计算资源，因为评估时不需要反向传播
+def estimate_loss(model):
+    """
+    估计模型在训练集和测试集上的loss
+    :param model: 模型
+    :return: 字典，包含训练集和测试集上的loss
+    """
+    out = {}
+    model.eval()
 
+    for split in ['train', 'test']:
+        losses = torch.zeros(eval_iters)  # 用于存储每次迭代的loss
+        for i in range(eval_iters):
+            X, Y = get_batch(split)
+            logits, loss = model(X, Y)  # logits是模型的输出，loss是损失
+            losses[i] = loss.item()
+        out[split] = losses.mean()
+    
+    model.train()
+
+    return out
 

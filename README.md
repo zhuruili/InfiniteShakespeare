@@ -67,6 +67,10 @@ print(get_batch('train'))
 )
 ```
 
+### 损失计算
+
+使用`estimate_loss()`函数评估模型在训练集和测试集上的平均损失。通过多次采样批次数据并计算损失，最终返回训练集和测试集的平均损失值，衡量模型的性能。
+
 ## 参考资料
 
 - [Andrej Karpathy's Google Colab Link](https://colab.research.google.com/drive/1JMLa53HDuA-i7ZBmqV7ZnA3c_fvtXnx-?usp=sharing#scrollTo=hoelkOrFY8bN)
