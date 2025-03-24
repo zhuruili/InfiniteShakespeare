@@ -31,6 +31,42 @@ Resolved. resolved.
 
 在经过训练后我们希望得到的输出是类似于这样对话形式的文本，但是其内容是由我们训练好的模型一个个输出的，形式和风格应该类似于`tiny_Shakespeare.txt`中的内容，但又不完全相同。
 
+### 编码解码
+
+在读取文件之后，我们通过`chars`查看所有可能出现的字符，`vocab_size`记录它们的个数。在本项目中我们要创建的是一个字符级的`LLM`，所以我们直接利用`lambda表达式`建立`encode`和`decode`来实现字符和编码之间的相互转化，例如：
+
+```python
+print(encode('InfiniteShakespeare'))
+print(decode([21, 52, 44, 47, 52, 47, 58, 43, 31, 46, 39, 49, 43, 57, 54, 43, 39, 56, 43]))
+```
+
+第一行会输出字符串对应的编码序列，也就是第二行中的数字列表；第二行则反之。
+
+### 划分采样
+
+随后将整个数据集划分为训练集和测试集（我这里采取的比例是8:2），然后使用`get_batch()`函数进行随机采样，每次会生成`batch_size`个序列长度为`block_size`的样本，例如：
+
+```python
+batch_size = 2
+block_size = 4
+print(get_batch('train'))
+```
+
+结果是如下的一组`x`与`y`：
+
+```python
+(
+    tensor(
+        [[52, 58, 39, 45],[52, 42,  1, 47]], 
+        device='cuda:0'
+        ), 
+    tensor(
+        [[58, 39, 45, 59],[42,  1, 47, 57]], 
+        device='cuda:0'
+        )
+)
+```
+
 ## 参考资料
 
 - [Andrej Karpathy's Google Colab Link](https://colab.research.google.com/drive/1JMLa53HDuA-i7ZBmqV7ZnA3c_fvtXnx-?usp=sharing#scrollTo=hoelkOrFY8bN)
