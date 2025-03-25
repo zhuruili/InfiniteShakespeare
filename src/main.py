@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+from torch.nn import functional as F
 
 torch.manual_seed(1024)
 
@@ -8,6 +10,10 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 8
 block_size = 32
 eval_iters = 100  # 评估时的迭代次数
+n_embd = 64
+n_head = 4
+n_layer = 4
+dropout = 0.1
 
 with open("data/tiny_Shakespeare.txt", 'r', encoding='utf-8') as f:
     text = f.read()
@@ -61,4 +67,38 @@ def estimate_loss(model):
     model.train()
 
     return out
+
+class Head(nn.Module):
+    """单头注意力机制"""
+
+    def __init__(self, head_size):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+
+        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        """
+        :param x: 输入张量，形状为 (B, T, C)，B为batch_size，T为序列长度，C为特征维度（embedding的维度）
+        :return: 输出张量，形状为 (B, T, C)
+        """
+        B, T, C = x.shape
+        k = self.key(x)
+        q = self.query(x)
+        v = self.value(x)
+
+        wei = q @ k.transpose(-2, -1) * C ** (-0.5)  # (B, T, C) @ (B, C, T) = (B, T, T)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # 掩码，避免未来信息泄露
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        wei = self.dropout(wei)
+
+        out = wei @ v  # (B, T, T) @ (B, T, C) = (B, T, C)
+
+        return out
+        
+
 
