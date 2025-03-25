@@ -1,5 +1,8 @@
 # Infinite Shakespeare
 
+![language](https://img.shields.io/badge/language-Python-blue)
+![pytorch](https://img.shields.io/badge/Framework-Pytorch-orange)
+
 无限莎士比亚是一个类似`GPT`的简易`LLM`，项目的作者是`Andrej Karpathy`大佬。本仓库是我尝试复该项目的记录。我刚接触这个项目时是看了原作者的教学视频和示例代码，不过迟钝的我并没能完全理解项目的每一个细节，因此我希望能通过这个仓库自己再敲一遍代码，顺便在`README`中记录下自己对代码的理解。
 
 ---
