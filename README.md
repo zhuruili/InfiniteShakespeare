@@ -294,6 +294,10 @@ class MultiHeadAttention(nn.Module):
 
 接下来，定义`FeedFoward`前馈神经网络，它的结构相对简单，经过线性层 -> 激活函数 -> 线性层 -> Dropout 之后，如果同样以`"I love AI"`为例，输入（1，3，4）的张量在经过网络输出之后仍然为（1，3，4）的张量。
 
+### Transformer基本块
+
+之后我们利用之前定义的种种网络结构组合成一个`Transformer`基本块，有关`Transformer`的详细说明可以看看[《 Attention Is All You Need 》](https://arxiv.org/abs/1706.03762)这篇论文。另外，在这一步中，除了用到之前定义的多注意力头和前馈神经网络之外，还利用残差连接和归一化确保训练的稳定性。
+
 ---
 
 ## 参考资料

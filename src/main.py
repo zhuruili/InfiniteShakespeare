@@ -132,3 +132,26 @@ class FeedFoward(nn.Module):
     def forward(self, x):
         return self.net(x)
     
+class Block(nn.Module):
+    """Transformer的一个基本模块"""
+
+    def __init__(self, n_embd, n_head):
+        """
+        :param n_embd: embedding的维度
+        :param n_head: 多头注意力机制的头数
+        """
+        super().__init__()
+        head_size = n_embd // n_head
+        self.sa = MultiHeadAttention(n_head, head_size)
+        self.ff = FeedFoward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x):
+        # 残差连接和归一化
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ff(self.ln2(x))  
+
+        return x
+        
+
