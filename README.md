@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD024 -->
 # Infinite Shakespeare
 
 ![language](https://img.shields.io/badge/language-Python-blue)
@@ -288,6 +289,10 @@ class MultiHeadAttention(nn.Module):
 3. **线性变换和 Dropout**：将拼接后的结果映射回原始特征维度，并应用 Dropout 防止过拟合。
 
 它的作用是让模型能够从多个角度关注输入序列中的信息，从而更好地理解复杂的上下文关系。
+
+### 前馈神经网络
+
+接下来，定义`FeedFoward`前馈神经网络，它的结构相对简单，经过线性层 -> 激活函数 -> 线性层 -> Dropout 之后，如果同样以`"I love AI"`为例，输入（1，3，4）的张量在经过网络输出之后仍然为（1，3，4）的张量。
 
 ---
 
