@@ -296,7 +296,30 @@ class MultiHeadAttention(nn.Module):
 
 ### Transformer基本块
 
-之后我们利用之前定义的种种网络结构组合成一个`Transformer`基本块，有关`Transformer`的详细说明可以看看[《 Attention Is All You Need 》](https://arxiv.org/abs/1706.03762)这篇论文。另外，在这一步中，除了用到之前定义的多注意力头和前馈神经网络之外，还利用残差连接和归一化确保训练的稳定性。
+之后我们利用之前定义的种种网络结构组合成一个`Transformer`基本块，更多有关`Transformer`的详细信息可以看看谷歌团队在2017年发表的[《 Attention Is All You Need 》](https://arxiv.org/abs/1706.03762)这篇论文。另外，在这一步中，除了用到之前定义的多注意力头和前馈神经网络之外，还利用残差连接和归一化确保训练的稳定性。
+
+### BigramLanguageModel
+
+终于到了激动人心的模型部分，这个模型其实主要是由我们上面定义出来的各种组件拼装而成的，这里只对与前文不同的地方做出解释。它有着这样的结构：
+
+```python
+def __init__(self):
+   super().__init__()
+   self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
+   self.position_embedding_table = nn.Embedding(block_size, n_embd)
+   self.blocks = nn.Sequential(*[Block(n_embd, n_head) for _ in range(n_layer)])
+   self.ln_f = nn.LayerNorm(n_embd)
+   self.lm_head = nn.Linear(n_embd, vocab_size)
+```
+
+#### 嵌入层
+
+定义了一个 **嵌入层（Embedding Layer）**，它的作用是将离散的字符索引（如 "I love AI" 中的字符索引）映射到一个连续的向量空间中。为后续的模型提供输入。
+
+- token_embedding  
+  将输入的字符索引（例如 `"I love AI"` 经过编码之后得到的内容）转化为向量表示，每一个字符会被用一个`n_embd`维的向量表示。比如在我们的字符级模型中`"I love AI"`编码之后的形状为（1，9），`token_embedding_table`是一个大小为`(vocab_size, n_embd)`的嵌入矩阵，它会根据索引查找对应的嵌入向量，让每一个字符被映射为一个`n_embd`维的向量，从而得到形状（1，9，n_embd）的向量。让模型能够感知字符的语义信息。
+- position_embedding  
+  位置嵌入层，作用是为输入序列中的每个位置（如第 1 个字符、第 2 个字符等）生成一个固定的向量表示。这是因为 Transformer 模型本身对序列的顺序没有内置的感知能力，需要通过位置嵌入来显式地告诉模型每个字符在序列中的位置。`position_embedding_table`是一个大小为`(block_size, n_embd)`的矩阵，即为序列长度`block_size`中的每一个位置生成一个唯一的`n_embd`维的向量，让模型能够感知字符的顺序信息。
 
 ---
 

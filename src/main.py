@@ -1,4 +1,6 @@
+from math import log
 import re
+from turtle import pos
 from sympy import real_root
 import torch
 import torch.nn as nn
@@ -9,10 +11,11 @@ torch.manual_seed(1024)
 # 超参数设置
 train_test_ratio = 0.8  # 训练集和测试集的比例
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-batch_size = 8
-block_size = 32
+batch_size = 8  # 批大小， 即（B, T, C）中的B
+block_size = 32  # 序列长度， 即（B, T, C）中的T
+learning_rate = 1e-3
 eval_iters = 100  # 评估时的迭代次数
-n_embd = 64
+n_embd = 64  # embedding的维度， 即（B, T, C）中的C
 n_head = 4
 n_layer = 4
 dropout = 0.1
@@ -154,4 +157,56 @@ class Block(nn.Module):
 
         return x
         
+class BigramLanguageModel(nn.Module):
+    """bigram语言模型"""
+
+    def __init__(self):
+        super().__init__()
+        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
+        self.position_embedding_table = nn.Embedding(block_size, n_embd)
+        self.blocks = nn.Sequential(*[Block(n_embd, n_head) for _ in range(n_layer)])
+        self.ln_f = nn.LayerNorm(n_embd)
+        self.lm_head = nn.Linear(n_embd, vocab_size)
+
+    def forward(self, idx, targets=None):
+        """
+        :param idx: 输入张量，形状为 (B, T)，B为batch_size，T为序列长度
+        :param targets: 目标张量，形状为 (B, T)
+        :return: logits, loss
+        """
+        B, T = idx.shape
+        tok_emb = self.token_embedding_table(idx)  # (B, T, C)
+        pos_emb = self.position_embedding_table(torch.arange(T, device=device))  # (T, C)
+        x = tok_emb + pos_emb  # (B, T, C)
+        x = self.blocks(x)  # (B, T, C)
+        x = self.ln_f(x)  # (B, T, C)
+        logits = self.lm_head(x)  # (B, T, vocab_size)
+
+        if targets is None:
+            loss = None
+        else:
+            B, T, C = logits.shape
+            logits = logits.view(B * T, C)
+            targets = targets.view(B * T)
+            loss = F.cross_entropy(logits, targets)
+
+        return logits, loss
+        
+    def generate(self, idx, max_new_tokens):
+        """
+        生成文本
+        :param idx: 输入张量，形状为 (B, T)，B为batch_size，T为序列长度
+        :param max_new_tokens: 生成的最大长度
+        """
+        for _ in range(max_new_tokens):
+            idx_cond = idx[:, -block_size:]  # 只取最后一个block_size长度的序列
+            logits, loss = self(idx_cond)  # 得到预测结果
+            logits = logits[:,-1, :]  # 只取最后一个时间步的输出
+            probs = F.softmax(logits, dim=-1) 
+            idx_next = torch.multinomial(probs, 1)  # 从多项分布中采样
+            idx = torch.cat([idx, idx_next], dim=-1)  # (B, T+1), 将预测结果拼接到序列后面
+
+        return idx
+
+
 
