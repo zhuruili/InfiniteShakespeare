@@ -17,6 +17,10 @@ n_layer = 4
 epoches = 3000  # 训练的轮数
 dropout = 0.1
 max_new_tokens = 2000  # 生成文本的最大长度
+save_or_not = True  # 是否保存模型
+save_path = 'model/Shakespeare_model.pt'  # 模型保存路径
+load_or_not = False  # 是否加载已有模型
+load_path = 'model/Shakespeare_model.pt'  # 模型加载路径
 
 with open("data/tiny_Shakespeare.txt", 'r', encoding='utf-8') as f:
     text = f.read()
@@ -230,6 +234,17 @@ for epoch in range(epoches):
     optimizer.zero_grad(set_to_none=True)  # 清空梯度
     loss.backward()  # 反向传播
     optimizer.step()  # 更新参数
+
+# 保存模型
+if save_or_not:
+    torch.save(m.state_dict(), save_path)
+    print(f"Model saved to {save_path}")
+
+# 加载模型
+if load_or_not:
+    m.load_state_dict(torch.load(load_path))
+    print(f"Model loaded from {load_path}")
+    m.eval()  # 设置模型为评估模式
 
 # 内容生成
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
