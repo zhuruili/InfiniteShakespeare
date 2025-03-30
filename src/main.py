@@ -10,16 +10,16 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 16  # 批大小， 即（B, T, C）中的B
 block_size = 64  # 序列长度， 即（B, T, C）中的T
 learning_rate = 1e-3
-eval_iters = 100  # 评估时的迭代次数
+eval_iters = 200  # 评估时的迭代次数
 n_embd = 64  # embedding的维度， 即（B, T, C）中的C
-n_head = 4
-n_layer = 4
+n_head = 8
+n_layer = 8
 epoches = 3000  # 训练的轮数
-dropout = 0.1
+dropout = 0.05
 max_new_tokens = 2000  # 生成文本的最大长度
-save_or_not = True  # 是否保存模型
+save_or_not = False  # 是否保存模型
 save_path = 'model/Shakespeare_model.pt'  # 模型保存路径
-load_or_not = False  # 是否加载已有模型
+load_or_not = True  # 是否加载已有模型
 load_path = 'model/Shakespeare_model.pt'  # 模型加载路径
 
 with open("data/tiny_Shakespeare.txt", 'r', encoding='utf-8') as f:
@@ -222,18 +222,20 @@ print(sum(p.numel() for p in m.parameters())/1e6, " M parameters")  # 打印模�
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
 # 训练模型
-for epoch in range(epoches):
-    if epoch % 100 == 0 or epoch == epoches - 1:
-        losses = estimate_loss(m)
-        print(f"step {epoch}: train loss {losses['train']:.4f}, test loss {losses['test']:.4f}")
+if not load_or_not:
+    print("未选用加载模型，开始训练")
+    for epoch in range(epoches):
+        if epoch % 100 == 0 or epoch == epoches - 1:
+            losses = estimate_loss(m)
+            print(f"step {epoch}: train loss {losses['train']:.4f}, test loss {losses['test']:.4f}")
 
-    # 取样训练数据
-    X, Y = get_batch('train')
+        # 取样训练数据
+        X, Y = get_batch('train')
 
-    logits, loss = m(X, Y)  # 前向传播
-    optimizer.zero_grad(set_to_none=True)  # 清空梯度
-    loss.backward()  # 反向传播
-    optimizer.step()  # 更新参数
+        logits, loss = m(X, Y)  # 前向传播
+        optimizer.zero_grad(set_to_none=True)  # 清空梯度
+        loss.backward()  # 反向传播
+        optimizer.step()  # 更新参数
 
 # 保存模型
 if save_or_not:
