@@ -1,7 +1,3 @@
-from math import log
-import re
-from turtle import pos
-from sympy import real_root
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -11,14 +7,16 @@ torch.manual_seed(1024)
 # 超参数设置
 train_test_ratio = 0.8  # 训练集和测试集的比例
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-batch_size = 8  # 批大小， 即（B, T, C）中的B
-block_size = 32  # 序列长度， 即（B, T, C）中的T
+batch_size = 16  # 批大小， 即（B, T, C）中的B
+block_size = 64  # 序列长度， 即（B, T, C）中的T
 learning_rate = 1e-3
 eval_iters = 100  # 评估时的迭代次数
 n_embd = 64  # embedding的维度， 即（B, T, C）中的C
 n_head = 4
 n_layer = 4
+epoches = 3000  # 训练的轮数
 dropout = 0.1
+max_new_tokens = 2000  # 生成文本的最大长度
 
 with open("data/tiny_Shakespeare.txt", 'r', encoding='utf-8') as f:
     text = f.read()
@@ -206,7 +204,34 @@ class BigramLanguageModel(nn.Module):
             idx_next = torch.multinomial(probs, 1)  # 从多项分布中采样
             idx = torch.cat([idx, idx_next], dim=-1)  # (B, T+1), 将预测结果拼接到序列后面
 
+            # 流式打印生成的字符
+            print(decode(idx_next[0].tolist()), end='')  # 打印生成的字符
+
         return idx
 
+model = BigramLanguageModel()
+print("Using device:", device)
+m = model.to(device)
+print(sum(p.numel() for p in m.parameters())/1e6, " M parameters")  # 打印模型参数数量
 
+# 优化器
+optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+
+# 训练模型
+for epoch in range(epoches):
+    if epoch % 100 == 0 or epoch == epoches - 1:
+        losses = estimate_loss(m)
+        print(f"step {epoch}: train loss {losses['train']:.4f}, test loss {losses['test']:.4f}")
+
+    # 取样训练数据
+    X, Y = get_batch('train')
+
+    logits, loss = m(X, Y)  # 前向传播
+    optimizer.zero_grad(set_to_none=True)  # 清空梯度
+    loss.backward()  # 反向传播
+    optimizer.step()  # 更新参数
+
+# 内容生成
+context = torch.zeros((1, 1), dtype=torch.long, device=device)
+m.generate(context, max_new_tokens=max_new_tokens)
 
