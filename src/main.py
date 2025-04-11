@@ -108,16 +108,28 @@ class Head(nn.Module):
         return out
         
 class MultiHeadAttention(nn.Module):
-    """多头注意力机制"""
+    """
+    多头注意力机制
+    
+    输入:
+        x: 输入张量，形状为 (B, T, C)
+           - B: 批次大小 (batch size)
+           - T: 序列长度
+           - C: 特征维度 (embedding 的维度)
+    
+    输出:
+        out: 输出张量，形状为 (B, T, C)
+           - 输出的形状与输入一致，但每个位置的表示已经结合了多个注意力头的信息
+    """
 
     def __init__(self, num_heads, head_size):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
-        self.proj = nn.Linear(n_embd, n_embd)
+        self.proj = nn.Linear(n_embd, n_embd)  # 将多头注意力的输出映射回原始维度，其实是将(B, T, head_size * num_heads)映射到(B, T, n_embd)，只不过这里head_size * num_heads = n_embd
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)  # (B, T, C * num_heads)
+        out = torch.cat([h(x) for h in self.heads], dim=-1)  # (B, T, head_size * num_heads)
         out = self.dropout(self.proj(out))
 
         return out

@@ -165,7 +165,7 @@ class Head(nn.Module):
 
 ##### 生成 `key`、`query` 和 `value`
 
-- 通过线性变换生成 `key`、`query` 和 `value`，它们的形状都是 `(1, 3, 4)`。
+- 通过线性变换（假设`C`与`head_size`相等，都为4）生成 `key`、`query` 和 `value`，它们的形状都是 `(1, 3, 4)`。
 
 ##### 计算注意力权重
 
