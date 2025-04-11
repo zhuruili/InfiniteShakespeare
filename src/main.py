@@ -91,19 +91,19 @@ class Head(nn.Module):
     def forward(self, x):
         """
         :param x: 输入张量，形状为 (B, T, C)，B为batch_size，T为序列长度，C为特征维度（embedding的维度）
-        :return: 输出张量，形状为 (B, T, C)
+        :return: 输出张量，形状为 (B, T, head_size)
         """
         B, T, C = x.shape
-        k = self.key(x)
-        q = self.query(x)
-        v = self.value(x)
+        k = self.key(x)  # (B, T, C) -> (B, T, head_size)
+        q = self.query(x)  # (B, T, C) -> (B, T, head_size)
+        v = self.value(x)  # (B, T, C) -> (B, T, head_size)
 
-        wei = q @ k.transpose(-2, -1) * C ** (-0.5)  # (B, T, C) @ (B, C, T) = (B, T, T)
-        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # 掩码，避免未来信息泄露
+        wei = q @ k.transpose(-2, -1) * C ** (-0.5)  #  (B, T, head_size) @ (B, head_size, T) = (B, T, T)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # 掩码，避免未来信息泄露，形状为 (B, T, T)
         wei = F.softmax(wei, dim=-1)  # (B, T, T)
         wei = self.dropout(wei)
 
-        out = wei @ v  # (B, T, T) @ (B, T, C) = (B, T, C)
+        out = wei @ v  # (B, T, T) @ (B, T, head_size) = (B, T, head_size)
 
         return out
         

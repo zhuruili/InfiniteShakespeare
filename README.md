@@ -8,6 +8,17 @@
 
 ---
 
+## 效果展示
+
+也许这个“小语言模型”生成的内容暂时没有那么可观，不过我们还是能发现它的生成内容中有部分正确的单词并且它成功模仿了预料的格式规律
+
+<video controls width="600">
+  <source src="path/to/your/video.mp4" type="video/mp4">
+  您的浏览器不支持视频标签。
+</video>
+
+---
+
 ## 过程解读
 
 光把代码跟着敲一遍感觉映像还是不够深刻，我希望能把对代码的理解记录在`README`中来巩固知识。
@@ -96,19 +107,19 @@ class Head(nn.Module):
     def forward(self, x):
         """
         :param x: 输入张量，形状为 (B, T, C)，B为batch_size，T为序列长度，C为特征维度（embedding的维度）
-        :return: 输出张量，形状为 (B, T, C)
+        :return: 输出张量，形状为 (B, T, head_size)
         """
         B, T, C = x.shape
-        k = self.key(x)
-        q = self.query(x)
-        v = self.value(x)
+        k = self.key(x)  # (B, T, C) -> (B, T, head_size)
+        q = self.query(x)  # (B, T, C) -> (B, T, head_size)
+        v = self.value(x)  # (B, T, C) -> (B, T, head_size)
 
-        wei = q @ k.transpose(-2, -1) * C ** (-0.5)  # (B, T, C) @ (B, C, T) = (B, T, T)
-        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # 掩码，避免未来信息泄露
+        wei = q @ k.transpose(-2, -1) * C ** (-0.5)  #  (B, T, head_size) @ (B, head_size, T) = (B, T, T)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # 掩码，避免未来信息泄露，形状为 (B, T, T)
         wei = F.softmax(wei, dim=-1)  # (B, T, T)
         wei = self.dropout(wei)
 
-        out = wei @ v  # (B, T, T) @ (B, T, C) = (B, T, C)
+        out = wei @ v  # (B, T, T) @ (B, T, head_size) = (B, T, head_size)
 
         return out
 ```
@@ -128,7 +139,7 @@ class Head(nn.Module):
    - `query`（查询）：表示序列中每个位置想要查询的信息。
    - `value`（值）：表示序列中每个位置的实际内容。
 
-   它们通过三个线性变换（`self.key`、`self.query`、`self.value`）从输入张量中生成，形状仍然是 `(B, T, head_size)`。
+   它们通过三个线性变换（`self.key`、`self.query`、`self.value`）从输入张量中生成，形状转化为 `(B, T, head_size)`。
 
 3. **计算注意力权重**：
    - 通过 `query` 和 `key` 的点积计算每个位置之间的相关性（注意力分数），结果是一个形状为 `(B, T, T)` 的矩阵，表示序列中每个位置对其他位置的注意力权重。
@@ -139,7 +150,7 @@ class Head(nn.Module):
    - 使用注意力权重矩阵对 `value` 进行加权求和，生成新的表示，形状为 `(B, T, head_size)`。
 
 5. **输出**：
-   - 输出是一个与输入形状相同的张量 `(B, T, head_size)`，但每个位置的表示已经结合了序列中其他位置的信息。
+   - 输出是一个形状为的张量 `(B, T, head_size)`，但每个位置的表示已经结合了序列中其他位置的信息。
 
 #### 简单举个栗子
 
