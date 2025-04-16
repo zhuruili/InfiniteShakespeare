@@ -12,10 +12,7 @@
 
 也许这个“小语言模型”生成的内容暂时没有那么可观，不过我们还是能发现它的生成内容中有部分正确的单词并且它成功模仿了预料的格式规律
 
-<video controls width="600">
-  <source src="path/to/your/video.mp4" type="video/mp4">
-  您的浏览器不支持视频标签。
-</video>
+![InfiniteShakespeareGif](InfiniteShakespeare.gif)
 
 ---
 
@@ -226,7 +223,7 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)  # (B, T, C * num_heads)
+        out = torch.cat([h(x) for h in self.heads], dim=-1)  # (B, T, head_size * num_heads)
         out = self.dropout(self.proj(out))
 
         return out
@@ -254,7 +251,7 @@ class MultiHeadAttention(nn.Module):
 - **计算多个注意力头的输出**：
   - 遍历每个注意力头（`Head`），对输入 `x` 进行独立的注意力计算。
   - 每个注意力头的输出形状为 `(B, T, head_size)`。
-  - 将所有注意力头的输出拼接在最后一个维度上，得到形状为 `(B, T, C * num_heads)` 的张量。
+  - 将所有注意力头的输出拼接在最后一个维度上，得到形状为 `(B, T, head_size * num_heads)` 的张量。
 
 - **线性变换和 Dropout**：
   - 使用 `self.proj` 将拼接后的张量映射回原始的特征维度 `C`。
