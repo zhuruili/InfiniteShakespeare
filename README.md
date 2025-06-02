@@ -14,6 +14,10 @@
 
 ![InfiniteShakespeareGif](InfiniteShakespeare.gif)
 
+## 改进计划
+
+- [ ] 将模型由字符级优化为单词级
+
 ---
 
 ## 过程解读
